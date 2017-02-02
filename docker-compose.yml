@@ -1,0 +1,11 @@
+version: '2'
+services:
+  server:
+    build: .
+    ports:
+      - "9999:9999/udp"
+    environment:
+      - REDIS_HOST=redis
+
+  redis:
+    image: redis:3.2.6-alpine
