@@ -60,11 +60,7 @@ class LogEntry:
 class EventHandler:
 
     def publish(self, data):
-        global ct_score
-        global ts_score
-
         event, groups = LogEntry().parse(data)
-
         if event:
             logger.info(f'Publishing event {event} with data {groups}')
             redis.publish('hlds_events', dill.dumps((event, groups)))
