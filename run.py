@@ -1,8 +1,14 @@
 #!/usr/bin/env python3.6
 
 import asyncio
+import dill
 import logging
+import os
 import re
+
+from redis import StrictRedis
+
+redis = StrictRedis(os.getenv('REDIS_HOST', 'localhost'))
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
@@ -17,8 +23,10 @@ EVENTS = {
     re.compile(b'^World triggered "Round_Draw"'): 'round_draw',
     re.compile(b'^World triggered "Round_End"'): 'round_end',
     re.compile(b'^World triggered "Round_Start"'): 'round_start',
-    re.compile(b'^Team "CT" triggered "CTs_Win" \(CT "(\d+)"\) \(T "(\d+)"\)'): 'team_cts_win',
-    re.compile(b'^Team "TERRORIST" triggered "Terrorists_Win" \(CT "(\d+)"\) \(T "(\d+)"\)'): 'team_ts_win',
+    re.compile(b'^Team "CT" triggered "CTs_Win" \(CT "(\d+)"\) \(T "(\d+)"\)'): 'team_cts_win_round',
+    re.compile(b'^Team "TERRORIST" triggered "Terrorists_Win" \(CT "(\d+)"\) \(T "(\d+)"\)'): 'team_ts_win_round',
+    re.compile(b'^Team "CT" scored "(\d+)" with "(\d+)" players$'): 'team_cts_win_game',
+    re.compile(b'^Team "TERRORIST" scored "(\d+)" with "(\d+)" players$'): 'team_ts_win_game',
 }
 
 
@@ -28,7 +36,7 @@ class LogEntry:
         match = re.match(log_entry_regexp, data)
         if match:
             date, entry = match.groups()
-            logger.debug(entry)
+            # logger.debug(entry)
             return date, entry
 
         return None, None
@@ -52,9 +60,14 @@ class LogEntry:
 class EventHandler:
 
     def publish(self, data):
+        global ct_score
+        global ts_score
+
         event, groups = LogEntry().parse(data)
+
         if event:
-            logger.info(f'Event {event} triggered')
+            logger.info(f'Publishing event {event} with data {groups}')
+            redis.publish('hlds_events', dill.dumps((event, groups)))
 
 
 class EchoServerProtocol:
