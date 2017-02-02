@@ -15,8 +15,9 @@ logger.setLevel(logging.DEBUG)
 console = logging.StreamHandler()
 logger.addHandler(console)
 
-log_entry_regexp = b'^\xff\xff\xff\xfflog L ([0-9]{2}\/[0-9]{2}\/[0-9]{4} - [0-9]{2}:[0-9]{2}:[0-9]{2}): (.*)\n\x00'
-log_entry_regexp = re.compile(log_entry_regexp)
+log_entry_regexp = re.compile(
+    b'^\xff\xff\xff\xfflog L ([0-9]{2}\/[0-9]{2}\/[0-9]{4} - [0-9]{2}:[0-9]{2}:[0-9]{2}): (.*)\n\x00'
+)
 
 PORT = 9999
 EVENTS = {
@@ -66,7 +67,7 @@ class EventHandler:
             redis.publish('hlds_events', dill.dumps((event, groups)))
 
 
-class EchoServerProtocol:
+class DatagramProtocol:
     def connection_made(self, transport):
         self.transport = transport
 
@@ -78,7 +79,9 @@ loop = asyncio.get_event_loop()
 logger.info(f'Starting HLDS logging server on port {PORT}')
 
 listen = loop.create_datagram_endpoint(
-    EchoServerProtocol, local_addr=('0.0.0.0', PORT))
+    DatagramProtocol,
+    local_addr=('0.0.0.0', PORT)
+)
 transport, protocol = loop.run_until_complete(listen)
 
 try:
