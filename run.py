@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.6
+#!/usr/bin/env python3
 
 import asyncio
 import dill
@@ -63,7 +63,7 @@ class EventHandler:
     def publish(self, data):
         event, groups = LogEntry().parse(data)
         if event:
-            logger.info(f'Publishing event {event} with data {groups}')
+            logger.info('Publishing event %s with data %s' % (event, groups))
             redis.publish('hlds_events', dill.dumps((event, groups)))
 
 
@@ -76,7 +76,7 @@ class DatagramProtocol:
 
 
 loop = asyncio.get_event_loop()
-logger.info(f'Starting HLDS logging server on port {PORT}')
+logger.info('Starting HLDS logging server on port %d' % PORT)
 
 listen = loop.create_datagram_endpoint(
     DatagramProtocol,
